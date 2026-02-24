@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="theme-color" content="#2563eb">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="باشگاه اردلان">
+    <title>مدیریت باشگاه اردلان</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="manifest" href="manifest.json">
+    <link rel="apple-touch-icon" href="pic.jpg">
+    <link href="https://cdn.jsdelivr.net/gh/rastikerdar/vazirmatn@v33.003/Vazirmatn-font-face.css" rel="stylesheet" type="text/css" />
+</head>
+<body>
+
+    <!-- هدر پویا -->
+    <header class="header">
+        <div class="header-content">
+            <button id="back-btn" class="back-btn" onclick="goBack()" style="display: none;">
+                <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor"><path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/></svg>
+            </button>
+            <h1 id="header-title">باشگاه اردلان</h1>
+        </div>
+        <div id="date-display"></div>
+    </header>
+
+    <!-- محتوای اصلی -->
+    <main id="app">
+        <!-- بخش داشبورد -->
+        <section id="view-dashboard" class="view active">
+            <div class="card summary-card">
+                <h3>آمار کلی</h3>
+                <div class="stats-grid">
+                    <div class="stat-item">
+                        <span class="label">تعداد اعضا</span>
+                        <span class="value" id="total-members">0</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="label">بدهی کل</span>
+                        <span class="value debt" id="total-debt">0 تومان</span>
+                    </div>
+                </div>
+            </div>
+            
+            <button class="btn-primary" onclick="showView('view-add-member')">+ عضو جدید</button>
+            
+            <button class="btn-report" onclick="showMonthlyReport()">📊 گزارش ماهانه</button>
+
+            <button class="btn-update" onclick="checkForUpdate()">🔄 بررسی آپدیت</button>
+
+            <!-- بخش پشتیبان‌گیری -->
+            <div class="card backup-card">
+                <h3>💾 پشتیبان‌گیری اطلاعات</h3>
+                <p id="backup-status" class="backup-status">در حال بارگذاری...</p>
+                <div style="display: flex; gap: 0.5rem;">
+                    <button class="btn-small" style="background: var(--success);" onclick="exportData()">📥 دانلود بک‌آپ</button>
+                    <label class="btn-small" style="background: var(--warning); cursor: pointer; display: inline-block; text-align: center;">
+                        📥 بازگردانی
+                        <input type="file" id="import-file" accept=".json,application/json" style="display: none;" onchange="importData(this)">
+                    </label>
+                </div>
+            </div>
+            
+            <div class="search-sort-container">
+                <input type="text" id="search-input" placeholder="جستجوی نام یا شماره..." oninput="searchMembers()">
+                <div class="sort-wrapper">
+                    <button class="sort-btn" onclick="document.getElementById('sort-members').click()" id="dashboard-sort-btn" title="تغییر مرتب‌سازی">
+                        <span id="dashboard-sort-icon">🔤</span>
+                    </button>
+                    <select id="sort-members" onchange="dashboardSortChanged()" class="native-select">
+                        <option value="name">نام (الفبا) 🔤</option>
+                        <option value="newest">جدیدترین 🆕</option>
+                        <option value="oldest">قدیمی‌ترین 📅</option>
+                        <option value="sessions">بیشترین جلسه 🏋️</option>
+                        <option value="spent">بیشترین خرج 💰</option>
+                        <option value="debt">بیشترین بدهی ⚠️</option>
+                    </select>
+                </div>
+            </div>
+
+            <div id="members-list" class="members-list"></div>
+        </section>
+
+        <!-- بخش افزودن عضو -->
+        <section id="view-add-member" class="view">
+            <h2>افزودن عضو جدید</h2>
+            <form id="add-member-form">
+                <input type="text" id="new-name" placeholder="نام و نام خانوادگی" required>
+                <input type="tel" id="new-phone" placeholder="شماره تماس" required>
+                <button type="submit" class="btn-primary">ذخیره عضو</button>
+                <button type="button" class="btn-secondary" onclick="goBack()">انصراف</button>
+            </form>
+        </section>
+
+        <!-- بخش جزئیات عضو -->
+        <section id="view-member-detail" class="view">
+            <div class="card">
+                <h2 id="detail-name">نام عضو</h2>
+                <p id="detail-phone">شماره: </p>
+                <div class="detail-stats">
+                    <div class="box">
+                        <span>جلسات باقی‌مانده</span>
+                        <strong id="detail-sessions">0</strong>
+                    </div>
+                    <div class="box debt-box">
+                        <span>بدهی فعلی</span>
+                        <strong id="detail-debt">0 تومان</strong>
+                    </div>
+                </div>
+            </div>
+
+            <button class="btn-checkin" onclick="checkInMember()">✅ ثبت حضور در باشگاه</button>
+
+            <h3>عملیات مالی و جلسات</h3>
+            <div class="actions-grid">
+                <button class="action-btn water" onclick="addTransaction('water')">💧 خرید آب</button>
+                <button class="action-btn session" onclick="addTransaction('session')">🏋️ خرید جلسه</button>
+                <button class="action-btn payment" onclick="addTransaction('payment')">💰 پرداخت وجه</button>
+            </div>
+
+            <h3>تاریخچه تراکنش‌ها</h3>
+            <div id="transaction-history" class="history-list"></div>
+
+            <button class="btn-danger" onclick="deleteMember()">🗑 حذف کامل عضو</button>
+        </section>
+
+        <!-- بخش گزارش ماهانه -->
+        <section id="view-monthly-report" class="view">
+            <h2>📊 گزارش ماهانه</h2>
+            <div class="card">
+                <p id="report-month" style="font-weight: bold; margin-bottom: 1rem;"></p>
+                <div class="stats-grid">
+                    <div class="stat-item">
+                        <span class="label">کل پرداختی‌ها</span>
+                        <span class="value" id="report-total">0 تومان</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="label">تعداد تراکنش</span>
+                        <span class="value" id="report-count">0</span>
+                    </div>
+                </div>
+                <!-- بخش بدهی‌ها (جدید) -->
+                <div class="stats-grid" style="margin-top: 1rem;">
+                    <div class="stat-item">
+                        <span class="label">بدهی مانده</span>
+                        <span class="value debt" id="report-debt-remaining">0 تومان</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="label">بدهی پرداخت شده</span>
+                        <span class="value" style="color: var(--success);" id="report-debt-paid">0 تومان</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="section-header">
+                <h3>📋 لیست اعضا و جلسات</h3>
+                <div class="sort-wrapper-small">
+                    <button class="sort-btn-small" onclick="document.getElementById('sort-report-members').click()" id="report-members-sort-btn" title="تغییر مرتب‌سازی">
+                        <span id="report-members-sort-icon">🔤</span>
+                    </button>
+                    <select id="sort-report-members" onchange="reportMembersSortChanged()" class="native-select">
+                        <option value="name">نام (الفبا) 🔤</option>
+                        <option value="sessions-desc">بیشترین جلسه 🏋️↑</option>
+                        <option value="sessions-asc">کمترین جلسه 🏋️↓</option>
+                        <option value="payment-desc">بیشترین پرداخت 💰↑</option>
+                        <option value="payment-asc">کمترین پرداخت 💰↓</option>
+                    </select>
+                </div>
+            </div>
+            <div id="report-members-list" class="members-list"></div>
+            
+            <div class="section-header">
+                <h3>📝 تمام تراکنش‌های ماه</h3>
+                <div class="sort-wrapper-small">
+                    <button class="sort-btn-small" onclick="document.getElementById('sort-report-transactions').click()" id="report-transactions-sort-btn" title="تغییر مرتب‌سازی">
+                        <span id="report-transactions-sort-icon">🔤</span>
+                    </button>
+                    <select id="sort-report-transactions" onchange="reportTransactionsSortChanged()" class="native-select">
+                        <option value="name">نام (الفبا) 🔤</option>
+                        <option value="newest">جدیدترین 🆕</option>
+                        <option value="oldest">قدیمی‌ترین 📅</option>
+                        <option value="amount-asc">کم به زیاد 💰↓</option>
+                        <option value="amount-desc">زیاد به کم 💰↑</option>
+                    </select>
+                </div>
+            </div>
+            <div id="report-details" class="history-list"></div>
+        </section>
+    </main>
+
+    <script src="script.js"></script>
+</body>
+</html>
