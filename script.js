@@ -376,12 +376,23 @@ function exportData() {
         date: new Date().toISOString()
     };
     const dataStr = JSON.stringify(data);
-    const dataUri = 'application/json;charset=utf-8,'+ encodeURIComponent(dataStr);
-    const exportFileDefaultName = 'gym-backup-'+ new Date().toLocaleDateString('fa-IR').replace(/\//g, '-') +'.json';
+    
+    // ✅ اضافه کردن پیشوند data: (مهم‌ترین بخش)
+    const dataUri = 'data:application/json;charset=utf-8,' + encodeURIComponent(dataStr);
+    
+    // ✅ اصلاح رجکس تاریخ (اسلش‌ها باید اسکیپ بشن)
+    const exportFileDefaultName = 'gym-backup-' + new Date().toLocaleDateString('fa-IR').replace(/\//g, '-') + '.json';
+    
     const linkElement = document.createElement('a');
     linkElement.setAttribute('href', dataUri);
     linkElement.setAttribute('download', exportFileDefaultName);
+    linkElement.style.display = 'none';
+    
+    // ✅ اضافه کردن به DOM برای سازگاری با موبایل
+    document.body.appendChild(linkElement);
     linkElement.click();
+    document.body.removeChild(linkElement);
+    
     localStorage.setItem('lastBackupDate', new Date().toISOString());
     alert('فایل پشتیبان با موفقیت دانلود شد.\nاین فایل رو جای امنی نگه دار!');
     updateBackupStatus();
